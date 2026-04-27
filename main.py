@@ -1,11 +1,18 @@
-import discord
 import os
 import asyncio
 import random
+import warnings
 from datetime import datetime
-from transformers import pipeline
 
-# Load paraphrasing model (this may take time on first run)
+warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore", category=UserWarning, module="transformers")
+warnings.filterwarnings("ignore", category=UserWarning, module="huggingface_hub")
+
+import discord
+from transformers import pipeline, logging as hf_logging
+
+hf_logging.set_verbosity_error()
+
 rephrase = pipeline("text2text-generation", model="Vamsi/T5_Paraphrase_Paws")
 
 TOKEN = os.getenv("DISCORD_TOKEN")
