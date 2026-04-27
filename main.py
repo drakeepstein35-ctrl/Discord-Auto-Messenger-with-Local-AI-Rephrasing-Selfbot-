@@ -40,15 +40,22 @@ async def send_message(channel, messages):
         print(f"[!] Send failed: {e}")
 
 
-async def countdown_sleep(seconds):
-    while seconds > 0:
-        mins = seconds // 60
-        secs = seconds % 60
+async def countdown_send(channel, seconds):
+    try:
+        while seconds > 0:
+            mins = seconds // 60
+            secs = seconds % 60
 
-        print(f"[⏳] Remaining: {mins}m {secs}s")
+            msg = f"⏳ {mins}m {secs}s remaining"
+            await channel.send(msg)
 
-        await asyncio.sleep(60)
-        seconds -= 60
+            print(f"[Countdown] {mins}m {secs}s remaining")
+
+            await asyncio.sleep(60)
+            seconds -= 60
+
+    except Exception as e:
+        print(f"[!] Countdown error: {e}")
 
 
 async def message_loop():
@@ -60,14 +67,20 @@ async def message_loop():
         for channel_id, messages in targets.items():
             try:
                 channel = await client.fetch_channel(channel_id)
+
+                # send main message
                 await send_message(channel, messages)
+
+                # set delay (change for testing)
+                sleep_time = 120  # 2 minutes (CHANGE THIS BACK LATER)
+
+                print(f"[⏱] Starting countdown...")
+
+                # send countdown every minute
+                await countdown_send(channel, sleep_time)
+
             except Exception as e:
                 print(f"[!] Channel error: {e}")
-
-        sleep_time = random.randint(41400, 45000)  # ~11.5–12.5 hours
-        print(f"[⏱] Sleeping for ~{sleep_time // 3600} hours")
-
-        await countdown_sleep(sleep_time)
 
 
 @client.event
