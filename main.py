@@ -85,4 +85,4 @@ client = MyClient(intents=intents)
 async def on_ready():
     print(f" Logged in as {client.user} ({client.user.id})")
 
-client.run(TOKEN, bot=False)
+client.run(TOKEN)
