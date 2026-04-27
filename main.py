@@ -73,9 +73,6 @@ class MyClient(discord.Client):
         asyncio.create_task(message_loop(self))
 
 
-client = MyClient(intents=intents)
-
-
 @client.event
 async def on_ready():
     print(f" Logged in as {client.user} ({client.user.id})")
