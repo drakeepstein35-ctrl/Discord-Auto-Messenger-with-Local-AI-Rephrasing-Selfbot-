@@ -1,4 +1,4 @@
-discord.py
+discord.py-self
 transformers==4.35.2
 sentencepiece
 --extra-index-url https://download.pytorch.org/whl/cpu
