@@ -1,4 +1,5 @@
 import discord
+import os
 import asyncio
 import random
 from datetime import datetime
@@ -7,15 +8,16 @@ from transformers import pipeline
 # Load paraphrasing model
 rephrase = pipeline("text2text-generation", model="Vamsi/T5_Paraphrase_Paws")
 
-TOKEN = "YOUR_USER_TOKEN"
+TOKEN = os.getenv("DISCORD_TOKEN")
 
 # Channels and your custom message(s)
 targets = {
-    123456789012345678: [  # Replace with actual channel ID
-        "I have built a new thing: ScaleScrape – a simple but powerful tool for scraping at scale.\n\n"
-        "I made this after getting tired of clunky scraping libraries. This one’s quick, clean, and dev-friendly — "
-        "also bypasses Cloudflare bot protection and can scrape from any explorer directly without rate limiting or anything stopping us. "
-        "Whom should I reach out to propose it?"
+    1462125650767904768: [
+        "a",
+        "r",
+        "rs",
+        "re",
+        "ra",
     ],
 }
 
@@ -43,10 +45,9 @@ async def send_message(channel, messages):
 
 async def message_loop():
     await client.wait_until_ready()
-
+    cycle = 0
     while not client.is_closed():
         print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Sending messages...")
-
         for channel_id, messages in targets.items():
             channel = client.get_channel(channel_id)
             if channel:
@@ -54,10 +55,20 @@ async def message_loop():
             else:
                 print(f"[!] Channel {channel_id} not found or not accessible.")
 
-        # Random sleep between 11.5 and 12.5 hours
         sleep_time = random.randint(41400, 45000)
         print(f"[⏱] Sleeping for ~{sleep_time/3600:.2f} hours...\n")
-        await asyncio.sleep(sleep_time)
+
+        # Countdown every minute
+        elapsed_minutes = 0
+        remaining = sleep_time
+        while remaining > 0:
+            wait = min(60, remaining)
+            await asyncio.sleep(wait)
+            remaining -= wait
+            elapsed_minutes += 1
+            print(f"[⏳] {elapsed_minutes} minute(s) elapsed since last send.")
+
+        cycle += 1
 
 @client.event
 async def on_ready():
