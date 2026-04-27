@@ -17,13 +17,9 @@ targets = {
 }
 
 intents = discord.Intents.default()
+intents.guilds = True
+intents.messages = True
 intents.message_content = True
-
-client = discord.Client(intents=intents)
-
-
-def generate_message(messages):
-    return random.choice(messages)
 
 
 async def send_message(channel, messages):
@@ -31,9 +27,8 @@ async def send_message(channel, messages):
         async with channel.typing():
             await asyncio.sleep(random.uniform(1.0, 3.0))
 
-        msg = generate_message(messages)
+        msg = random.choice(messages)
         await channel.send(msg)
-
         print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Sent to #{channel.name}")
 
     except Exception as e:
@@ -58,7 +53,7 @@ async def countdown_send(channel, seconds):
         print(f"[!] Countdown error: {e}")
 
 
-async def message_loop():
+async def message_loop(client: discord.Client):
     await client.wait_until_ready()
 
     while not client.is_closed():
@@ -68,19 +63,22 @@ async def message_loop():
             try:
                 channel = await client.fetch_channel(channel_id)
 
-                # send main message
                 await send_message(channel, messages)
 
-                # set delay (change for testing)
-                sleep_time = 120  # 2 minutes (CHANGE THIS BACK LATER)
-
-                print(f"[⏱] Starting countdown...")
-
-                # send countdown every minute
+                sleep_time = 120  # change to your real delay later
+                print("[⏱] Starting countdown...")
                 await countdown_send(channel, sleep_time)
 
             except Exception as e:
                 print(f"[!] Channel error: {e}")
+
+
+class MyClient(discord.Client):
+    async def setup_hook(self):
+        asyncio.create_task(message_loop(self))
+
+
+client = MyClient(intents=intents)
 
 
 @client.event
