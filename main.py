@@ -5,12 +5,11 @@ import random
 from datetime import datetime
 from transformers import pipeline
 
-# Load paraphrasing model
+# Load paraphrasing model (this may take time on first run)
 rephrase = pipeline("text2text-generation", model="Vamsi/T5_Paraphrase_Paws")
 
 TOKEN = os.getenv("DISCORD_TOKEN")
 
-# Channels and your custom message(s)
 targets = {
     1462125650767904768: [
         "a",
@@ -21,54 +20,84 @@ targets = {
     ],
 }
 
-client = discord.Client(self_bot=True)
+intents = discord.Intents.default()
+intents.guilds = True
+intents.messages = True
+intents.message_content = True
+
+client = discord.Client(intents=intents)
+
 
 def rephrase_message(text):
     try:
-        out = rephrase(f"paraphrase: {text} </s>", max_length=256, num_return_sequences=1, do_sample=True)
+        out = rephrase(
+            f"paraphrase: {text} </s>",
+            max_length=64,
+            num_return_sequences=1,
+            do_sample=True
+        )
         return out[0]['generated_text']
     except Exception as e:
         print(f"[!] Rephrase failed: {e}")
         return text
 
+
 async def send_message(channel, messages):
     try:
         async with channel.typing():
-            delay = random.uniform(1.0, 3.5)
-            await asyncio.sleep(delay)
+            await asyncio.sleep(random.uniform(1.0, 3.0))
+
         original_msg = random.choice(messages)
         msg = rephrase_message(original_msg)
+
         await channel.send(msg)
-        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Sent to {channel.name} in {channel.guild.name}")
+
+        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Sent to #{channel.name}")
+
     except Exception as e:
-        print(f"[!] Failed to send message in {channel.id}: {e}")
+        print(f"[!] Failed in {channel.id}: {e}")
+
+
+async def countdown_sleep(seconds):
+    start = datetime.now()
+
+    while True:
+        elapsed = (datetime.now() - start).total_seconds()
+        remaining = int(seconds - elapsed)
+
+        if remaining <= 0:
+            break
+
+        mins = remaining // 60
+        secs = remaining % 60
+
+        print(f"[⏳] Remaining: {mins}m {secs}s")
+        await asyncio.sleep(60)
+
 
 async def message_loop():
     await client.wait_until_ready()
-    cycle = 0
+
     while not client.is_closed():
-        print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Sending messages...")
+        print(f"\n[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Sending messages...")
+
         for channel_id, messages in targets.items():
             channel = client.get_channel(channel_id)
-            if channel:
-                await send_message(channel, messages)
-            else:
-                print(f"[!] Channel {channel_id} not found or not accessible.")
 
-        sleep_time = random.randint(41400, 45000)
-        print(f"[⏱] Sleeping for ~{sleep_time/3600:.2f} hours...\n")
+            if channel is None:
+                try:
+                    channel = await client.fetch_channel(channel_id)
+                except Exception:
+                    print(f"[!] Cannot access channel {channel_id}")
+                    continue
 
-        # Countdown every minute
-        elapsed_minutes = 0
-        remaining = sleep_time
-        while remaining > 0:
-            wait = min(60, remaining)
-            await asyncio.sleep(wait)
-            remaining -= wait
-            elapsed_minutes += 1
-            print(f"[⏳] {elapsed_minutes} minute(s) elapsed since last send.")
+            await send_message(channel, messages)
 
-        cycle += 1
+        sleep_time = random.randint(41400, 45000)  # ~11.5–12.5 hrs
+        print(f"[⏱] Sleeping for ~{sleep_time // 3600} hours")
+
+        await countdown_sleep(sleep_time)
+
 
 @client.event
 async def on_ready():
