@@ -16,11 +16,6 @@ targets = {
     ],
 }
 
-intents = discord.Intents.default()
-intents.guilds = True
-intents.messages = True
-intents.message_content = True
-
 
 async def send_message(channel, messages):
     try:
